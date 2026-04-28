@@ -1,0 +1,8 @@
+node_modules/
+.env
+data/
+*.log
+.DS_Store
+
+# Bug manifest is the answer key for the emergency-response agent — keep local only
+BUGS.md
