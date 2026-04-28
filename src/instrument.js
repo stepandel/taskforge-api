@@ -28,3 +28,10 @@ if (process.env.SENTRY_DSN) {
 } else {
   console.warn('[sentry] SENTRY_DSN not set — errors will not be reported');
 }
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason && reason.stack ? reason.stack : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err && err.stack ? err.stack : err);
+});

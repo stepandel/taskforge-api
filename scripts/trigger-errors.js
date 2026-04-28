@@ -11,13 +11,13 @@
 
 const BASE = process.env.BASE_URL || 'http://localhost:3000';
 
-async function login() {
+async function login(email = 'bob@taskforge.io') {
   const res = await fetch(`${BASE}/auth/login`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: 'bob@taskforge.io', password: 'password123' }),
+    body: JSON.stringify({ email, password: 'password123' }),
   });
-  if (!res.ok) throw new Error(`login failed: ${res.status}`);
+  if (!res.ok) throw new Error(`login failed for ${email}: ${res.status}`);
   const data = await res.json();
   return data.token;
 }
@@ -90,9 +90,9 @@ const bugs = [
     id: 'n-plus-one',
     severity: 'P2',
     title: 'N+1 query plus null reference in admin stats',
-    async run() {
+    async run({ adminToken }) {
       return call('/admin/stats', {
-        headers: { 'x-internal-service': '1' },
+        headers: { authorization: `Bearer ${adminToken}` },
       });
     },
   },
@@ -154,7 +154,8 @@ const bugs = [
 
 async function main() {
   const filter = process.argv[2];
-  const token = await login();
+  const token = await login('bob@taskforge.io');
+  const adminToken = await login('alice@taskforge.io');
 
   const selected = bugs.filter((b) => {
     if (!filter) return true;
@@ -171,7 +172,7 @@ async function main() {
   for (const bug of selected) {
     process.stdout.write(`[${bug.severity}] ${bug.id} — ${bug.title} ... `);
     try {
-      const result = await bug.run({ token });
+      const result = await bug.run({ token, adminToken });
       console.log(`status=${result.status}`);
     } catch (err) {
       console.log(`threw: ${err.message}`);
