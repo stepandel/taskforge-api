@@ -81,3 +81,64 @@ DURATION_MS=300000 RPS=10 npm run load
 | `PORT` | `3000` | |
 | `JWT_SECRET` | `dev-secret-change-me` | |
 | `DATABASE_PATH` | `./data/taskforge.db` | |
+
+## Deploying to Fly.io via GitHub
+
+The repo ships with a `Dockerfile`, `fly.toml`, and a GitHub Actions workflow at
+`.github/workflows/deploy.yml` that runs `flyctl deploy` on every push to `main`.
+
+### One-time setup
+
+1. **Push to GitHub** (any repo, public or private).
+2. **Install flyctl locally** and sign in:
+   ```bash
+   brew install flyctl   # or: curl -L https://fly.io/install.sh | sh
+   flyctl auth signup    # or: flyctl auth login
+   ```
+3. **Create the Fly app** (matches the name in `fly.toml`; pick a unique name and edit if needed):
+   ```bash
+   flyctl apps create taskforge-api
+   ```
+4. **Create the persistent volume** for SQLite:
+   ```bash
+   flyctl volumes create taskforge_data --size 1 --region sjc
+   ```
+5. **Set runtime secrets** on Fly (these are not in fly.toml — they live in Fly's secret store):
+   ```bash
+   flyctl secrets set \
+     SENTRY_DSN="https://<your-key>@oXXXX.ingest.sentry.io/YYYY" \
+     JWT_SECRET="$(openssl rand -hex 32)"
+   ```
+6. **Generate a deploy token and add it to GitHub**:
+   ```bash
+   flyctl tokens create deploy
+   ```
+   In your GitHub repo → Settings → Secrets and variables → Actions → New repository secret:
+   - **Name:** `FLY_API_TOKEN`
+   - **Value:** the token from the previous command
+
+### Every push to `main`
+
+The Actions workflow runs `flyctl deploy --remote-only`, which:
+- builds the Dockerfile in Fly's remote builder
+- runs `node src/seed.js` as the release command (idempotent — safe to re-run)
+- rolls out the new machine with the volume re-attached
+
+### Triggering bugs against the deployed app
+
+Once deployed, point the trigger script at your Fly URL:
+
+```bash
+BASE_URL=https://taskforge-api.fly.dev npm run trigger
+BASE_URL=https://taskforge-api.fly.dev npm run load
+```
+
+Sentry events from the Fly machine will arrive in the Sentry project tied to
+the `SENTRY_DSN` secret, tagged `environment=production`.
+
+### Cost note
+
+`fly.toml` sets `auto_stop_machines = "stop"` and `min_machines_running = 0`,
+so the machine sleeps when idle and wakes on the first request. With the
+`shared-cpu-1x / 256mb` VM and a 1 GB volume, this stays inside Fly's free
+allowance for typical test traffic.

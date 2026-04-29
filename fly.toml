@@ -1,0 +1,35 @@
+app = "taskforge-api"
+primary_region = "sjc"
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  DATABASE_PATH = "/data/taskforge.db"
+  SENTRY_ENVIRONMENT = "production"
+  SENTRY_RELEASE = "taskforge-api@1.4.2"
+
+[[mounts]]
+  source = "taskforge_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+  cpus = 1
