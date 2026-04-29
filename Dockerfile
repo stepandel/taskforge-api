@@ -21,7 +21,6 @@ COPY --from=build /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
 COPY src ./src
 COPY scripts ./scripts
-COPY public ./public
 
 RUN mkdir -p /data && chown -R node:node /data
 USER node

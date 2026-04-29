@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 /**
- * Generates realistic-ish background traffic so Sentry events from planted
- * bugs land in a stream of normal activity.
+ * Generates background traffic across the public read endpoints. Useful for
+ * smoke-testing a deployment and exercising the request path under load.
+ *
+ *   npm run load                           # 60s at 5 rps against localhost
+ *   DURATION_MS=300000 RPS=10 npm run load
+ *   BASE_URL=https://taskforge-api.fly.dev npm run load
  */
 
 const BASE = process.env.BASE_URL || 'http://localhost:3000';

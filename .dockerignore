@@ -5,5 +5,5 @@ data
 .github
 *.log
 .DS_Store
-BUGS.md
+tools
 README.md

@@ -7,7 +7,6 @@
     "start": "node --require ./src/instrument.js src/server.js",
     "dev": "node --watch --require ./src/instrument.js src/server.js",
     "seed": "node src/seed.js",
-    "trigger": "node scripts/trigger-errors.js",
     "load": "node scripts/load-test.js"
   },
   "dependencies": {

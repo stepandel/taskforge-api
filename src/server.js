@@ -1,9 +1,6 @@
 const express = require('express');
-const path = require('path');
 const Sentry = require('@sentry/node');
 const db = require('./db');
-const notify = require('./utils/notify');
-const bugCatalog = require('./bug-catalog');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -19,6 +16,14 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 
 app.use((req, res, next) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', '*, Authorization');
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  next();
+});
+
+app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const ms = Date.now() - start;
@@ -32,15 +37,6 @@ app.get('/health', (req, res) => {
   Sentry.captureMessage(`health-check-ok users=${userCount}`, 'info');
   res.json({ status: 'ok', users: userCount, version: process.env.SENTRY_RELEASE });
 });
-
-app.get('/_test/bugs', (req, res) => res.json(bugCatalog));
-app.get('/_test/meta', (req, res) => res.json({
-  sentry_configured: Boolean(process.env.SENTRY_DSN),
-  environment: process.env.SENTRY_ENVIRONMENT || 'development',
-  release: process.env.SENTRY_RELEASE,
-}));
-app.use('/_test', express.static(path.join(__dirname, '..', 'public')));
-app.get('/', (req, res) => res.redirect('/_test/'));
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
@@ -65,8 +61,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = parseInt(process.env.PORT) || 3000;
-
-notify.logHeartbeat();
 
 const server = app.listen(PORT, () => {
   console.log(`TaskForge API listening on http://localhost:${PORT}`);
