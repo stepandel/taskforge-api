@@ -1,7 +1,9 @@
 const express = require('express');
+const path = require('path');
 const Sentry = require('@sentry/node');
 const db = require('./db');
 const notify = require('./utils/notify');
+const bugCatalog = require('./bug-catalog');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -30,6 +32,15 @@ app.get('/health', (req, res) => {
   Sentry.captureMessage(`health-check-ok users=${userCount}`, 'info');
   res.json({ status: 'ok', users: userCount, version: process.env.SENTRY_RELEASE });
 });
+
+app.get('/_test/bugs', (req, res) => res.json(bugCatalog));
+app.get('/_test/meta', (req, res) => res.json({
+  sentry_configured: Boolean(process.env.SENTRY_DSN),
+  environment: process.env.SENTRY_ENVIRONMENT || 'development',
+  release: process.env.SENTRY_RELEASE,
+}));
+app.use('/_test', express.static(path.join(__dirname, '..', 'public')));
+app.get('/', (req, res) => res.redirect('/_test/'));
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);

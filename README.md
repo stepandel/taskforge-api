@@ -51,23 +51,23 @@ Server listens on `http://localhost:3000`. Default seeded credentials: `bob@task
 
 ## Triggering errors
 
-To exercise every planted bug:
+### Web console
+
+Open `http://localhost:3000/` (or your Fly URL) — the root redirects to a built-in test console at `/_test/` with one button per planted bug, severity-grouped, plus "fire all P0/P1/…" shortcuts and a live activity log. The page auto-logs in as both seeded users so admin-only triggers work without setup.
+
+### CLI
 
 ```bash
-npm run trigger
-```
-
-Or trigger by severity / id:
-
-```bash
-node scripts/trigger-errors.js p0
+npm run trigger                            # fire every bug
+node scripts/trigger-errors.js p0          # only P0 bugs
 node scripts/trigger-errors.js sql-injection
+BASE_URL=https://taskforge-api.fly.dev npm run trigger
 ```
 
-To generate background traffic:
+### Background traffic
 
 ```bash
-npm run load              # default: 60s at 5 rps
+npm run load                               # default: 60s at 5 rps
 DURATION_MS=300000 RPS=10 npm run load
 ```
 
