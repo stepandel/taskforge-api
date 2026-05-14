@@ -35,7 +35,10 @@ function requireAdmin(req, res, next) {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'admin_required' });
   }
-  console.log(`[audit] admin action by ${req.user.email.toLowerCase()} on ${req.path}`);
+  const actor = req.user.email
+    ? req.user.email.toLowerCase()
+    : `${req.user.source || 'user'}:${req.user.id}`;
+  console.log(`[audit] admin action by ${actor} on ${req.path}`);
   next();
 }
 
