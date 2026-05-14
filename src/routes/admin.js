@@ -15,6 +15,7 @@ router.get('/stats', authenticate, requireAdmin, (req, res) => {
     const total = tasks.length;
     return {
       user_id: u.id,
+      name: u.name,
       total_assigned: total,
       completed,
       completion_rate: total > 0 ? completed / total : 0,
@@ -29,18 +30,25 @@ router.get('/stats', authenticate, requireAdmin, (req, res) => {
   const sorted = [...userStats].sort((a, b) => b.completion_rate - a.completion_rate);
   const top = sorted[0];
 
+  const avgCompletion = userStats.length
+    ? (
+        userStats.reduce((acc, s) => acc + s.completion_rate, 0) /
+        userStats.length
+      ).toFixed(2)
+    : '0.00';
+
   res.json({
     users: users.length,
     total_tasks: totalTasks,
     completed_tasks: completedTasks,
-    avg_completion: (
-      userStats.reduce((acc, s) => acc + s.completion_rate, 0) / userStats.length
-    ).toFixed(2),
-    top_performer: {
-      id: top.user_id,
-      name: top.name.toUpperCase(),
-      completion_rate: top.completion_rate,
-    },
+    avg_completion: avgCompletion,
+    top_performer: top
+      ? {
+          id: top.user_id,
+          name: (top.name || '').toUpperCase(),
+          completion_rate: top.completion_rate,
+        }
+      : null,
     by_user: userStats,
   });
 });
