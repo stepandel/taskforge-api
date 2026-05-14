@@ -13,9 +13,13 @@ router.get('/me', authenticate, (req, res) => {
 });
 
 router.get('/search', authenticate, (req, res) => {
-  const q = req.query.q || '';
-  const sql = `SELECT id, email, name, plan FROM users WHERE name LIKE '%${q}%' OR email LIKE '%${q}%' LIMIT 20`;
-  const rows = db.prepare(sql).all();
+  const q = String(req.query.q || '');
+  // Escape LIKE metacharacters so user input cannot widen the match,
+  // and bind the value as a parameter to prevent SQL injection.
+  const pattern = '%' + q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_') + '%';
+  const rows = db.prepare(
+    "SELECT id, email, name, plan FROM users WHERE name LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\' LIMIT 20"
+  ).all(pattern, pattern);
   res.json({ query: q, results: rows });
 });
 
